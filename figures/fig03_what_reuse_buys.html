@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What Reuse Buys</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+  /* Layout: one claim, one chart, a guided walk through it in five steps, then the controls. Dark board by design. */
+  :root {
+    --bg: #0a0c10; --panel: #11151b; --line: #1f252d; --grid: #171c23;
+    --ink: #eceff2; --ink-2: #a9b2bb; --ink-3: #6c7681; --gold: #f0ac5f; --focus: #ffd166;
+    --serif: "STIX Two Text", "Times New Roman", Georgia, serif; --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--serif); font-size: 18px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding-block: 40px 72px; padding-inline: 20px; }
+  .eyebrow { font-family: var(--sans); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 14px; }
+  h1 { font-weight: 600; font-size: clamp(26px, 3.8vw, 38px); line-height: 1.15; letter-spacing: -0.01em; margin: 0 0 14px; text-wrap: balance; max-width: 30ch; }
+  .looking { font-family: var(--sans); font-size: 14px; color: var(--ink-2); margin: 0 0 22px; max-width: 80ch; line-height: 1.5; }
+  .looking b { color: var(--ink); font-weight: 500; }
+  .stage { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding-block: 14px 6px; }
+  .stage svg { display: block; width: 100%; height: auto; font-family: var(--serif); }
+  .walk { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 24px; align-items: start; padding-block: 18px 8px; }
+  .walk .text { min-width: 0; }
+  .step-k { font-family: var(--sans); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin: 0 0 6px; }
+  .step-t { font-size: 20px; font-weight: 600; margin: 0 0 6px; line-height: 1.3; text-wrap: balance; }
+  .step-p { margin: 0; color: var(--ink-2); font-size: 17px; max-width: 70ch; }
+  .step-p b { color: var(--ink); font-weight: 600; }
+  .nav { display: flex; gap: 8px; align-items: center; font-family: var(--sans); font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+  .nav button { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 7px 14px; cursor: pointer; }
+  .nav button[disabled] { opacity: 0.4; cursor: default; }
+  .nav button.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px 28px; padding-block: 18px 6px; font-family: var(--sans); font-size: 13px; color: var(--ink-2); border-top: 1px solid var(--line); margin-top: 14px; }
+  .ctl .lab { margin-bottom: 8px; letter-spacing: 0.04em; text-transform: uppercase; font-size: 11.5px; color: var(--ink-3); }
+  .seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .seg button { font: inherit; color: var(--ink-2); background: transparent; border: 0; border-right: 1px solid var(--line); padding: 7px 12px; cursor: pointer; }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-pressed="true"] { color: var(--bg); background: var(--ink); }
+  .score { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 28px; }
+  .tile { border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; min-width: 0; }
+  .tile .what { font-family: var(--sans); font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+  .tile .vs { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+  .tile .old { color: var(--ink-3); font-size: 20px; text-decoration: line-through; text-decoration-color: var(--ink-3); }
+  .tile .new { color: var(--gold); font-size: 30px; font-weight: 600; line-height: 1; }
+  .tile .how { font-family: var(--sans); font-size: 12px; color: var(--ink-3); margin-top: 8px; }
+  .axis path, .axis line { stroke: var(--line); } .axis text { fill: var(--ink-3); font-size: 12px; font-family: var(--serif); }
+  .gridline { stroke: var(--grid); }
+  .axlabel { fill: var(--ink-3); font-size: 12px; font-family: var(--sans); letter-spacing: 0.04em; text-transform: uppercase; }
+  .prov { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--sans); font-size: 12.5px; color: var(--ink-3); line-height: 1.6; max-width: 80ch; }
+  @media (max-width: 640px) { .walk { grid-template-columns: 1fr; } .nav { justify-content: flex-start; } body { font-size: 17px; } }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Topological reuse · Figure 3</p>
+  <h1 id="claim">A lens on the clock learns a + b + 3 in 100 steps. A new network needs 4,400, and from 96 examples it never learns it.</h1>
+  <p class="looking"><b>What you are looking at.</b> Across: training steps, on a log scale, so the first hundred steps and the last ten thousand both fit. Up: how many of the 401 pairs the network never trained on it gets right. Every line is the same new task, learned from the same examples, by a different route. Seed 10; the dotted line at 95% is where this project calls a task learned.</p>
+  <div class="stage"><div id="chart"></div></div>
+  <div class="walk">
+    <div class="text"><p class="step-k" id="step-k"></p><p class="step-t" id="step-t"></p><p class="step-p" id="step-p"></p></div>
+    <div class="nav"><button type="button" id="prev">← Back</button><span id="step-n"></span><button type="button" id="next" class="primary">Next →</button></div>
+  </div>
+  <div class="controls" id="controls" hidden>
+    <div class="ctl"><div class="lab">New task</div><div class="seg" role="group" aria-label="Task"><button type="button" data-v="shift:3" aria-pressed="true">a + b + 3 (a turn)</button><button type="button" data-v="sqadd:0" aria-pressed="false">a² + b (a fold)</button></div></div>
+    <div class="ctl"><div class="lab">Training examples</div><div class="seg" role="group" aria-label="Pairs"><button type="button" data-v="480" aria-pressed="true">480</button><button type="button" data-v="96" aria-pressed="false">96</button></div></div>
+    <div class="ctl"><div class="lab">Routes shown</div><div class="seg" role="group" aria-label="Routes"><button type="button" data-v="all" aria-pressed="true">all three</button><button type="button" data-v="scratch" aria-pressed="false">from scratch only</button></div></div>
+  </div>
+  <div class="score" id="score"></div>
+  <p class="prov" id="prov"></p>
+</div>
+
+<script id="curves-data" type="application/json">{"seed":10,"every":50,"scratch_steps":10000,"lens_steps":3000,"block_numbers":42975,"rings":9,"sizes":{"ring lens":630,"table tune":3968},"tasks":{"shift:3":{"name":"a + b + 3","curves":{"480":{"from scratch":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0025,0.005,0.0125,0.0175,0.0324,0.0374,0.0424,0.0474,0.0499,0.0549,0.0648,0.0798,0.0998,0.1222,0.1421,0.1721,0.1845,0.207,0.2344,0.2469,0.2618,0.2718,0.3017,0.3242,0.3342,0.3641,0.394,0.419,0.4439,0.4763,0.4938,0.5087,0.5362,0.5736,0.596,0.6135,0.6209,0.6409,0.6509,0.6608,0.6708,0.6933,0.7107,0.7207,0.7481,0.7531,0.7706,0.7855,0.7955,0.8005,0.8055,0.8155,0.8204,0.8304,0.8404,0.8454,0.8678,0.8703,0.8803,0.8828,0.8878,0.8978,0.9002,0.9002,0.9052,0.9127,0.9227,0.9227,0.9277,0.9302,0.9352,0.9401,0.9426,0.9501,0.9551,0.9551,0.9576,0.9601,0.9651,0.9676,0.9676,0.9676,0.9701,0.9726,0.9751,0.98,0.98,0.9825,0.9825,0.9825,0.9825,0.985,0.9875,0.9875,0.9875,0.9875,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.9925,0.9925,0.9925,0.9925,0.9925,0.9925,0.9925,0.9925,0.9925,0.9925,0.995,0.9975,0.9975,0.9975,0.9975,0.9975,0.9975,0.9975,0.9975,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0],"ring lens":[0.9127,0.9925,0.9975,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0],"table tune":[0.9726,0.9925,0.9975,0.9975,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"96":{"from scratch":[0.0025,0.0025,0.0025,0.0025,0.0025,0.0025,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"ring lens":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0],"table tune":[0.8454,0.8778,0.8878,0.9102,0.9102,0.9077,0.9102,0.9127,0.9127,0.9127,0.9177,0.9152,0.9177,0.9177,0.9177,0.9152,0.9152,0.9127,0.9077,0.9052,0.9077,0.9027,0.8978,0.8953,0.8903,0.8903,0.8878,0.8853,0.8853,0.8878,0.8878,0.8903,0.8903,0.8928,0.8953,0.8978,0.8953,0.8953,0.8978,0.8978,0.8978,0.9002,0.9002,0.9002,0.9002,0.9002,0.9002,0.9002,0.9002,0.9002,0.9002,0.9002,0.9002,0.9002,0.9002,0.9002,0.9002,0.9002,0.9002,0.9002]}}},"sqadd:0":{"name":"a\u00b2 + b","curves":{"480":{"from scratch":[0.005,0.0125,0.02,0.0549,0.0648,0.0948,0.1222,0.1446,0.182,0.2294,0.2793,0.3292,0.3766,0.4065,0.4289,0.4539,0.4638,0.4763,0.4813,0.4913,0.4963,0.5012,0.5087,0.5112,0.5187,0.5287,0.5436,0.5536,0.5686,0.5761,0.5885,0.596,0.6035,0.6135,0.6234,0.6334,0.6633,0.6758,0.6908,0.7132,0.7232,0.7431,0.7581,0.7631,0.7781,0.7855,0.7955,0.8005,0.8105,0.8105,0.8155,0.8304,0.8304,0.8329,0.8379,0.8454,0.8504,0.8504,0.8529,0.8579,0.8603,0.8628,0.8703,0.8703,0.8753,0.8803,0.8828,0.8903,0.9002,0.9002,0.9027,0.9077,0.9102,0.9127,0.9127,0.9152,0.9177,0.9177,0.9227,0.9277,0.9277,0.9302,0.9302,0.9327,0.9327,0.9327,0.9327,0.9327,0.9327,0.9352,0.9352,0.9352,0.9352,0.9401,0.9401,0.9401,0.9426,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9451,0.9476,0.9501,0.9526,0.9526,0.9526,0.9526,0.9526,0.9526,0.9551,0.9551,0.9551,0.9576,0.9576,0.9576,0.9601,0.9601,0.9601,0.9601,0.9601,0.9601,0.9601,0.9601,0.9601,0.9626,0.9601,0.9601,0.9601,0.9601,0.9626,0.9626,0.9626,0.9626,0.9626,0.9651,0.9651,0.9651,0.9651,0.9651,0.9651,0.9651,0.9651,0.9651,0.9651,0.9651,0.9651,0.9676,0.9676,0.9676,0.9676,0.9676,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701,0.9701],"ring lens":[0.0623,0.0623,0.0623,0.0623,0.0623,0.0574,0.0748,0.0948,0.0973,0.0923,0.0923,0.0898,0.0873,0.0898,0.0823,0.0823,0.0823,0.0723,0.0773,0.0698,0.0748,0.0773,0.0723,0.0723,0.0748,0.0648,0.0698,0.0723,0.0698,0.0574,0.0549,0.0673,0.0673,0.0599,0.0623,0.0648,0.0673,0.0748,0.0748,0.0773,0.0748,0.0848,0.0848,0.0848,0.0848,0.0848,0.0873,0.0873,0.0923,0.0948,0.0973,0.1022,0.0998,0.0998,0.0948,0.1022,0.1022,0.1047,0.1047,0.1022],"table tune":[0.9252,0.9601,0.9676,0.9726,0.98,0.98,0.985,0.985,0.9875,0.9875,0.9875,0.9875,0.99,0.9925,0.9925,0.995,0.9975,0.9975,0.9975,0.9975,0.9975,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},"96":{"from scratch":[0.0125,0.0175,0.02,0.02,0.02,0.015,0.0175,0.0175,0.015,0.015,0.0175,0.0175,0.02,0.02,0.0175,0.015,0.015,0.015,0.015,0.015,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.015,0.015,0.015,0.015,0.015,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.0175,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02],"ring lens":[0.0623,0.0623,0.0648,0.0698,0.0623,0.0648,0.0898,0.0848,0.0998,0.0973,0.0998,0.0973,0.0923,0.0923,0.0998,0.0973,0.0898,0.0898,0.0973,0.0973,0.0948,0.0923,0.0873,0.0773,0.0723,0.0748,0.0723,0.0723,0.0723,0.0748,0.0748,0.0773,0.0773,0.0773,0.0798,0.0798,0.0798,0.0798,0.0748,0.0823,0.0798,0.0798,0.0823,0.0823,0.0823,0.0823,0.0823,0.0873,0.0823,0.0873,0.0823,0.0848,0.0823,0.0873,0.0873,0.0873,0.0898,0.0848,0.0848,0.0873],"table tune":[0.0673,0.2394,0.3491,0.4414,0.5112,0.5611,0.596,0.6309,0.6534,0.6608,0.6833,0.6833,0.6983,0.7232,0.7332,0.7631,0.7905,0.803,0.813,0.8229,0.8354,0.8304,0.8429,0.8479,0.8454,0.8504,0.8504,0.8454,0.8529,0.8529,0.8479,0.8479,0.8479,0.8454,0.8454,0.8454,0.8454,0.8454,0.8454,0.8454,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429,0.8429]}}}}}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+(function () {
+  const D = JSON.parse(document.getElementById('curves-data').textContent);
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const C = { scratch: '#a9b2bb', ring: '#f0ac5f', table: '#eceff2', ink3: '#6c7681', line: '#1f252d', grid: '#171c23' };
+  const NAMES = { 'from scratch': 'a new network, from scratch (42,975 numbers)', 'ring lens': `ring lens on the frozen a + b clock (${D.sizes['ring lens'].toLocaleString()} numbers, ${8 * D.rings} trained)`, 'table tune': 'table tune: retune the clock’s number tables (3,968 numbers)' };
+  const COLOR = { 'from scratch': C.scratch, 'ring lens': C.ring, 'table tune': C.table };
+  const fmt = d3.format(','), pct = v => Math.round(v * 100) + '%';
+  const st = { task: 'shift:3', pairs: '480', routes: ['from scratch'], step: 0, freeze: false };
+  const first95 = cv => { const i = cv.findIndex(v => v >= 0.95); return i < 0 ? null : (i + 1) * D.every; };
+
+  const STEPS = [
+    { k: 'Step 1 of 5 · the yardstick', t: 'A fresh network learns a + b + 3 from 480 examples.', task: 'shift:3', pairs: '480', routes: ['from scratch'],
+      p: () => `It memorizes the examples quickly and gets <b>nothing</b> right on unseen pairs for about two thousand steps; then it finds the clock, and at step <b>${fmt(first95(cur('from scratch')))}</b> it passes 95%. This is the ordinary way to learn a new task, and the line every other route is measured against.` },
+    { k: 'Step 2 of 5 · the lens', t: 'The same task, through a ring lens on a frozen a + b network.', task: 'shift:3', pairs: '480', routes: ['from scratch', 'ring lens'],
+      p: () => `The a + b network already has the clock. a + b + 3 is that clock turned by three hours, so the lens only has to learn the turn: a 2 × 2 map on each of the ${D.rings} rings, <b>${8 * D.rings} trained numbers</b>. It passes 95% at step <b>${fmt(first95(cur('ring lens')))}</b>, ${Math.round(first95(cur('from scratch')) / first95(cur('ring lens')))} times sooner, and stores ${D.sizes['ring lens'].toLocaleString()} numbers instead of 42,975.` },
+    { k: 'Step 3 of 5 · less data', t: 'Now give both routes only 96 examples, a fifth of the data.', task: 'shift:3', pairs: '96', routes: ['from scratch', 'ring lens'],
+      p: () => `The fresh network never gets there: <b>${pct(d3.max(cur('from scratch')))}</b> at its best, 0% at the end, because 96 pairs are not enough to find the clock from nothing. The lens does not need to find the clock; it is given one. It reaches 95% at step <b>${fmt(first95(cur('ring lens')))}</b> and ends at ${pct(cur('ring lens').at(-1))}. This is what “learns from less data” means in this project.` },
+    { k: 'Step 4 of 5 · when a turn is not enough', t: 'A task that is not a turn of the clock: a² + b.', task: 'sqadd:0', pairs: '480', routes: ['from scratch', 'ring lens', 'table tune'],
+      p: () => `Squaring a folds the clock onto itself, so turning the rings cannot do it: the ring lens stalls at <b>${pct(cur('ring lens').at(-1))}</b>, which is the right answer for it to give. The next rung of the ladder retunes the clock’s own number tables, keeping every neuron frozen. It passes 95% at step <b>${fmt(first95(cur('table tune')))}</b>; the fresh network needs ${fmt(first95(cur('from scratch')))}. With 96 examples it ends at ${pct(D.tasks['sqadd:0'].curves['96']['table tune'].at(-1))} against ${pct(D.tasks['sqadd:0'].curves['96']['from scratch'].at(-1))} (switch to 96 below).` },
+    { k: 'Step 5 of 5 · what improved', t: 'Three things got better, and this is by how much.', task: 'shift:3', pairs: '96', routes: ['from scratch', 'ring lens', 'table tune'],
+      p: () => `Steps to learn a + b + 3: <b>${fmt(first95(D.tasks['shift:3'].curves['480']['from scratch']))} → ${fmt(first95(D.tasks['shift:3'].curves['480']['ring lens']))}</b>. Numbers stored for it: <b>42,975 → ${D.sizes['ring lens'].toLocaleString()}</b>. Examples needed: <b>480 → 96</b>, where the fresh network fails outright. Nothing was lost on the way: the a + b network is frozen, so it still adds. The controls below are now free; the figures that follow show how the network decides which clock to use, and what that decision costs.` }
+  ];
+  function cur(route) { return D.tasks[st.task].curves[st.pairs][route]; }
+
+  const W = 1000, H = 460, m = { l: 64, r: 230, t: 30, b: 50 };
+  const svg = d3.select('#chart').append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img');
+  const x = d3.scaleLog().domain([50, D.scratch_steps]).range([m.l, W - m.r]);
+  const y = d3.scaleLinear().domain([0, 1]).range([H - m.b, m.t]);
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('.0%')).tickSize(-(W - m.l - m.r))).call(g => g.selectAll('line').attr('class', 'gridline')).call(g => g.select('.domain').remove());
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).tickValues([50, 100, 200, 500, 1000, 2000, 5000, 10000]).tickFormat(v => v >= 1000 ? (v / 1000) + 'k' : v).tickSize(0)).call(g => g.select('.domain').attr('stroke', C.line));
+  svg.append('text').attr('class', 'axlabel').attr('x', m.l).attr('y', 16).text('unseen pairs right');
+  svg.append('text').attr('class', 'axlabel').attr('x', W - m.r).attr('y', H - 10).attr('text-anchor', 'end').text('training steps, log scale');
+  svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(0.95)).attr('y2', y(0.95)).attr('stroke', C.ink3).attr('stroke-dasharray', '2 4');
+  svg.append('text').attr('x', W - m.r + 8).attr('y', y(0.95) + 4).attr('fill', C.ink3).attr('font-size', 12).text('95%: learned');
+  const layer = svg.append('g');
+  const line = d3.line().x((v, i) => x((i + 1) * D.every)).y(v => y(v)).curve(d3.curveMonotoneX);
+
+  function draw(animate) {
+    layer.selectAll('*').remove();
+    const labels = [];
+    st.routes.forEach(route => {
+      const cv = cur(route), col = COLOR[route];
+      const path = layer.append('path').attr('d', line(cv)).attr('fill', 'none').attr('stroke', col).attr('stroke-width', route === 'ring lens' ? 2.6 : 2).attr('opacity', 0.95);
+      if (animate && !reduced) { const len = path.node().getTotalLength(); path.attr('stroke-dasharray', len).attr('stroke-dashoffset', len).transition().duration(1400).ease(d3.easeCubicOut).attr('stroke-dashoffset', 0); }
+      const f = first95(cv);
+      if (f) { layer.append('circle').attr('cx', x(f)).attr('cy', y(cv[f / D.every - 1])).attr('r', 5).attr('fill', col).attr('stroke', '#0a0c10').attr('stroke-width', 1.5);
+               layer.append('text').attr('x', x(f) + 8).attr('y', y(0.95) + 18).attr('fill', col).attr('font-size', 13).text(`step ${fmt(f)}`); }
+      const words = `${NAMES[route]} · ends at ${pct(cv.at(-1))}`.split(' '); const lines = []; let sline = '';
+      words.forEach(w => { if ((sline + ' ' + w).trim().length > 30) { lines.push(sline.trim()); sline = w; } else sline = (sline + ' ' + w); }); if (sline.trim()) lines.push(sline.trim());
+      labels.push({ col, yv: y(cv.at(-1)), lines, h: lines.length * 14 + 8 });
+    });
+    labels.sort((a, b) => a.yv - b.yv); let bottom = m.t - 4;
+    labels.forEach(l => { l.top = Math.max(bottom + 4, l.yv - l.h / 2); bottom = l.top + l.h; });
+    labels.forEach(l => {
+      const t = layer.append('text').attr('x', W - m.r + 10).attr('y', l.top + 12).attr('fill', l.col).attr('font-size', 12.5);
+      l.lines.forEach((ln, i) => t.append('tspan').attr('x', W - m.r + 10).attr('dy', i === 0 ? 0 : 14).text(ln));
+      const mid = l.top + l.h / 2; if (Math.abs(mid - l.yv) > 6) layer.append('line').attr('x1', W - m.r + 1).attr('x2', W - m.r + 7).attr('y1', l.yv).attr('y2', mid).attr('stroke', C.ink3);
+    });
+  }
+  function show(i, animate) {
+    st.step = i; const s = STEPS[i]; st.task = s.task; st.pairs = s.pairs; st.routes = s.routes.slice();
+    document.getElementById('step-k').textContent = s.k; document.getElementById('step-t').textContent = s.t; document.getElementById('step-p').innerHTML = s.p();
+    document.getElementById('step-n').textContent = `${i + 1} / ${STEPS.length}`;
+    document.getElementById('prev').disabled = i === 0; document.getElementById('next').disabled = i === STEPS.length - 1;
+    document.getElementById('controls').hidden = i < STEPS.length - 1;
+    syncSeg('[aria-label="Task"]', st.task); syncSeg('[aria-label="Pairs"]', st.pairs); syncSeg('[aria-label="Routes"]', st.routes.length === 1 ? 'scratch' : 'all');
+    draw(animate);
+  }
+  function syncSeg(sel, val) { document.querySelectorAll(sel + ' button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === val))); }
+  function seg(sel, onPick) { const btns = document.querySelectorAll(sel + ' button'); btns.forEach(b => b.addEventListener('click', () => { btns.forEach(x => x.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); onPick(b.dataset.v); })); }
+  seg('[aria-label="Task"]', v => { st.task = v; draw(false); });
+  seg('[aria-label="Pairs"]', v => { st.pairs = v; draw(false); });
+  seg('[aria-label="Routes"]', v => { st.routes = v === 'all' ? ['from scratch', 'ring lens', 'table tune'] : ['from scratch']; draw(false); });
+  document.getElementById('prev').addEventListener('click', () => show(Math.max(0, st.step - 1), true));
+  document.getElementById('next').addEventListener('click', () => show(Math.min(STEPS.length - 1, st.step + 1), true));
+
+  // scoreboard
+  const sh = D.tasks['shift:3'].curves;
+  const tiles = [
+    { what: 'steps to learn a + b + 3 (480 examples)', old: fmt(first95(sh['480']['from scratch'])), neu: fmt(first95(sh['480']['ring lens'])), how: 'fresh network → ring lens on the frozen a + b network' },
+    { what: 'numbers stored for the new task', old: '42,975', neu: D.sizes['ring lens'].toLocaleString(), how: `a whole block → ${8 * D.rings} trained numbers plus the rings’ locations` },
+    { what: 'unseen pairs right from 96 examples', old: pct(sh['96']['from scratch'].at(-1)), neu: pct(sh['96']['ring lens'].at(-1)), how: 'the fresh network never finds the clock; the lens is given one' }
+  ];
+  document.getElementById('score').innerHTML = tiles.map(t => `<div class="tile"><div class="what">${t.what}</div><div class="vs"><span class="old">${t.old}</span><span class="new">${t.neu}</span></div><div class="how">${t.how}</div></div>`).join('');
+  document.getElementById('prov').textContent = `Seed 10 of notebook 8’s split: 480 training pairs (or their first 96), 80 check pairs, 401 unseen pairs. The a + b network is a block of 42,975 numbers trained 10,000 steps (AdamW, learning rate 0.003, weight decay 1.0) and then frozen; it has ${D.rings} rings. The fresh network is the same block trained from a random start on the new task with the same recipe, logged every ${D.every} steps for ${fmt(D.scratch_steps)}. The ring lens and table tune train for ${fmt(D.lens_steps)} steps at the settings notebook 9 chose for this task and data size on the check pairs. Notebook 9 repeats these comparisons over ten fresh seeds; the curves here are one seed, chosen to show the shape of each route rather than its average.`;
+  show(0, true);
+})();
+</script>
+
+<script>
+(function () {   // inside the story page: tell it how tall this figure is, so its frame can fit
+  if (window.parent === window) return;
+  var name = location.pathname.split("/").pop();
+  function send() { window.parent.postMessage({ topologicalReuseFigure: name, height: document.documentElement.scrollHeight }, "*"); }
+  if (window.ResizeObserver) new ResizeObserver(send).observe(document.body);
+  window.addEventListener("load", send); send();
+})();
+</script>
+</html>

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Topological Reuse</title>
+<meta name="description" content="Topological reuse: networks solving structurally similar problems build similar circuit shapes; one network can detect those shapes and reuse its own circuits through lenses, learning faster, smaller and from less data">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+  /* The story page: one column, the project's dark board. Text in a reading measure, figures at full width.
+     Colors follow the figure library: gray for the add circuit, teal for mul, gold for the highlighted route. */
+  :root {
+    --bg: #0a0c10; --panel: #11151b; --line: #1f252d; --grid: #171c23;
+    --ink: #eceff2; --ink-2: #a9b2bb; --ink-3: #6c7681; --add: #b9c1c8; --mul: #5cd0b3; --gold: #f0ac5f; --focus: #ffd166;
+    --serif: "STIX Two Text", "Times New Roman", Georgia, serif; --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--serif); font-size: 19px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration-color: var(--ink-3); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--gold); }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 2px; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; }
+  .eyebrow { font-family: var(--sans); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 18px; }
+
+  .hero { padding-block: 72px 36px; }
+  .hero h1 { font-weight: 600; font-size: clamp(30px, 4.6vw, 50px); line-height: 1.12; letter-spacing: -0.012em; margin: 0 0 24px; max-width: 24ch; text-wrap: balance; }
+  .hero .lede { font-size: clamp(18px, 2vw, 21px); color: var(--ink-2); max-width: 66ch; margin: 0 0 22px; }
+  .hero .by { font-family: var(--sans); font-size: 13px; color: var(--ink-3); margin: 0; line-height: 1.6; max-width: 80ch; }
+  .hero .by b { color: var(--ink-2); font-weight: 500; }
+
+  .toc { border-block: 1px solid var(--line); }
+  .toc ol { list-style: none; margin: 0; padding: 14px 0; display: flex; flex-wrap: wrap; gap: 8px 28px; font-family: var(--sans); font-size: 13px; color: var(--ink-3); }
+  .toc a { color: var(--ink-2); text-decoration: none; }
+  .toc a:hover { color: var(--ink); }
+  .toc .n { color: var(--gold); margin-right: 8px; font-variant-numeric: tabular-nums; }
+
+  section { padding-block: 64px 8px; }
+  .kicker { font-family: var(--sans); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin: 0 0 10px; }
+  h2 { font-weight: 600; font-size: clamp(24px, 3.2vw, 34px); line-height: 1.18; letter-spacing: -0.008em; margin: 0 0 18px; max-width: 30ch; text-wrap: balance; }
+  .prose p { margin: 0 0 16px; color: var(--ink-2); max-width: 68ch; }
+  .prose p b { color: var(--ink); font-weight: 600; }
+
+  .frame { margin-top: 26px; border-block: 1px solid var(--line); }
+  .frame iframe { display: block; width: 100%; border: 0; background: var(--bg); }
+  .frame iframe.fit { height: 760px; }
+  .frame iframe.window { height: min(88vh, 940px); }
+
+  .card { margin-top: 26px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 24px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 28px; align-items: center; }
+  .card.plain { grid-template-columns: minmax(0, 1fr); }
+  .card svg { width: 132px; height: 132px; display: block; }
+  .card .ft { font-size: 22px; font-weight: 600; margin: 0 0 6px; line-height: 1.25; }
+  .card .what { font-family: var(--sans); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 8px; }
+  .card ul { list-style: none; margin: 0 0 18px; padding: 0; font-family: var(--sans); font-size: 14px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 4px 0; }
+  .card li:not(:last-child)::after { content: "·"; margin-inline: 10px; color: var(--ink-3); }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-family: var(--sans); font-size: 14px; }
+  button.open { font: inherit; color: var(--bg); background: var(--ink); border: 1px solid var(--ink); border-radius: 4px; padding: 9px 16px; cursor: pointer; font-weight: 500; }
+  button.open:hover { background: #fff; }
+  button.open[aria-expanded="true"] { background: transparent; color: var(--ink); border-color: var(--line); }
+  .actions a { color: var(--ink-2); }
+  .host:empty { display: none; }
+  .host { margin-top: 18px; border-block: 1px solid var(--line); }
+  .src { font-family: var(--sans); font-size: 12.5px; color: var(--ink-3); margin: 14px 0 0; line-height: 1.6; overflow-wrap: anywhere; }
+  .src code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11.5px; color: var(--ink-2); }
+
+  .rule { border: 0; border-top: 1px solid var(--line); margin: 72px 0 0; }
+  table { width: 100%; border-collapse: collapse; margin-top: 22px; }
+  th { font-family: var(--sans); font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); text-align: left; padding: 0 16px 10px 0; border-bottom: 1px solid var(--line); }
+  td { vertical-align: top; padding: 14px 16px 14px 0; border-bottom: 1px solid var(--grid); font-size: 17px; line-height: 1.45; color: var(--ink-2); }
+  td.n { font-variant-numeric: tabular-nums; color: var(--ink-3); width: 3.2em; white-space: nowrap; }
+  td.name { color: var(--ink); width: 13.5em; }
+  td.res { font-family: var(--sans); font-size: 13.5px; width: 15.5em; color: var(--ink-2); padding-right: 0; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--ink); margin-right: 9px; vertical-align: 0.02em; }
+  .dot.pass { background: var(--ink); }
+  .dot.mixed { background: linear-gradient(90deg, var(--ink) 50%, transparent 50%); }
+  .legend { font-family: var(--sans); font-size: 12.5px; color: var(--ink-3); margin: 14px 0 0; display: flex; flex-wrap: wrap; gap: 6px 22px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 48px; margin-top: 8px; }
+  .two h3, .next h3 { font-family: var(--sans); font-size: 12px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin: 34px 0 12px; }
+  .two ul, .next ol, .come ul { margin: 0; padding-left: 1.1em; color: var(--ink-2); font-size: 17px; line-height: 1.5; }
+  .two li, .next li, .come li { margin-bottom: 10px; }
+  .two li::marker, .next li::marker, .come li::marker { color: var(--ink-3); }
+  footer { padding-block: 56px 80px; font-family: var(--sans); font-size: 12.5px; color: var(--ink-3); line-height: 1.7; }
+  footer p { margin: 0 0 6px; max-width: 92ch; }
+
+  @media (max-width: 720px) {
+    body { font-size: 17.5px; }
+    .hero { padding-block: 44px 28px; }
+    section { padding-block: 48px 4px; }
+    .card { grid-template-columns: minmax(0, 1fr); padding: 20px; }
+    .card svg { width: 96px; height: 96px; }
+    .two { grid-template-columns: 1fr; }
+    table, tbody, tr, td { display: block; width: auto !important; }
+    thead { display: none; }
+    tr { padding-block: 14px; border-bottom: 1px solid var(--grid); }
+    td { border: 0; padding: 0 0 4px; }
+    td.n { display: inline; }
+    td.n::after { content: "\00a0·\00a0"; }
+    td.name { display: inline; }
+    td.res { padding-top: 6px; }
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<header class="hero wrap">
+  <p class="eyebrow">Topological reuse · research in progress</p>
+  <h1>Networks that solve similar problems build similar shapes. One network can read those shapes and reuse its own circuits.</h1>
+  <p class="lede">One idea, tested in numbered notebooks: networks that solve structurally similar problems build similar circuit shapes (rings and waves on clock arithmetic), so one network can read those shapes from a short probe and reuse its own circuits through small lenses, learning faster, smaller and from less data.</p>
+  <p class="by"><b>Arthur Boscoli Rodrigues</b> · findings as of 2026-10-05 · page built 2026-10-05<br>A living page. A chapter is added when its experiment has run on fresh seeds and its figure is ready; the table at the end is rebuilt from the project&#x27;s findings every time. The chapter texts are a first draft.</p>
+</header>
+<nav class="toc" aria-label="Chapters"><div class="wrap"><ol>
+<li><a href="#clock"><span class="n">1</span>The shape</a></li>
+<li><a href="#buys"><span class="n">2</span>The payoff</a></li>
+<li><a href="#loop"><span class="n">3</span>The loop</a></li>
+<li><a href="#evidence"><span class="n">·</span>Where the evidence stands</a></li>
+</ol></div></nav>
+<main>
+<section class="wrap" id="clock">
+  <p class="kicker">1 · The shape</p>
+  <h2>A ring says “clock”. Its arrangement says which clock.</h2>
+  <div class="prose">
+    <p>A small network learned to add on a 31-hour clock. What it built is nine rings, each with the thirty-one numbers around it, each counting its way around at a different rate. The network found this on its own; it was never shown a clock.</p>
+    <p>The rings can be found without being told where to look: groups of neurons that read the same directions give them away (notebook 3). And they can be put to other use: a lens of 64 to 80 trained numbers turns the frozen rings of addition into subtraction, and taking the lens off restores addition (notebook 5).</p>
+  </div>
+  <div class="card"><svg viewBox="0 0 132 132" role="img" aria-label="The numbers 0 to 30 in counting order around a ring"><circle cx="66" cy="66" r="46" fill="none" stroke="var(--line)" stroke-width="1"/><circle cx="66.0" cy="20.0" r="2.6" fill="var(--add)" opacity="1"/><circle cx="75.3" cy="20.9" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="84.1" cy="23.7" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="92.3" cy="28.2" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="99.3" cy="34.3" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="105.0" cy="41.7" r="2.6" fill="var(--add)" opacity="1"/><circle cx="109.1" cy="50.0" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="111.5" cy="59.0" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="111.9" cy="68.3" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="110.5" cy="77.5" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="107.3" cy="86.3" r="2.6" fill="var(--add)" opacity="1"/><circle cx="102.4" cy="94.2" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="96.0" cy="100.9" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="88.3" cy="106.2" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="79.8" cy="109.9" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="70.7" cy="111.8" r="2.6" fill="var(--add)" opacity="1"/><circle cx="61.3" cy="111.8" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="52.2" cy="109.9" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="43.7" cy="106.2" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="36.0" cy="100.9" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="29.6" cy="94.2" r="2.6" fill="var(--add)" opacity="1"/><circle cx="24.7" cy="86.3" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="21.5" cy="77.5" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="20.1" cy="68.3" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="20.5" cy="59.0" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="22.9" cy="50.0" r="2.6" fill="var(--add)" opacity="1"/><circle cx="27.0" cy="41.7" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="32.7" cy="34.3" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="39.7" cy="28.2" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="47.9" cy="23.7" r="1.9" fill="var(--add)" opacity="0.62"/><circle cx="56.7" cy="20.9" r="2.6" fill="var(--add)" opacity="1"/><text x="66.0" y="10.2" text-anchor="middle" font-size="9" fill="var(--ink-3)" font-family="var(--serif)">0</text><text x="116.1" y="38.0" text-anchor="middle" font-size="9" fill="var(--ink-3)" font-family="var(--serif)">5</text><text x="119.0" y="95.2" text-anchor="middle" font-size="9" fill="var(--ink-3)" font-family="var(--serif)">10</text><text x="72.0" y="127.9" text-anchor="middle" font-size="9" fill="var(--ink-3)" font-family="var(--serif)">15</text><text x="19.3" y="105.3" text-anchor="middle" font-size="9" fill="var(--ink-3)" font-family="var(--serif)">20</text><text x="10.7" y="48.7" text-anchor="middle" font-size="9" fill="var(--ink-3)" font-family="var(--serif)">25</text></svg><div>
+    <p class="what">Interactive figure</p>
+    <p class="ft">The Clock Inside the Network</p>
+    <ul><li>A ring says “clock”.</li><li>Its arrangement says which clock.</li><li>A lens is a turn or a mirror.</li><li>How it forms.</li></ul>
+    <div class="actions"><button class="open" type="button" aria-expanded="false" data-host="host-clock" data-src="figures/fig01_clock_inside_the_network.html" data-title="The Clock Inside the Network" data-open="Open the figure here">Open the figure here</button><a href="figures/fig01_clock_inside_the_network.html" target="_blank" rel="noopener">Open it in its own tab</a></div>
+  </div></div>
+  <div class="host" id="host-clock"></div>
+  <p class="src">Sources in the project: <code>findings/nb01_ring_detection.json</code>, <code>findings/nb03_general_matcher.json</code>, <code>findings/nb05_sharing_lenses.json</code>, <code>figures/data/fig01_rings.json</code></p>
+</section>
+<section class="wrap" id="buys">
+  <p class="kicker">2 · The payoff</p>
+  <h2>What reuse buys</h2>
+  <div class="prose">
+    <p>A lens is a small trained map placed in front of a frozen circuit so that it serves a new task. The frozen circuit already holds the clock; the lens only has to turn it. The figure walks through what that buys, in steps and in examples.</p>
+  </div>
+  <div class="frame"><iframe class="fit" data-fig="fig03_what_reuse_buys.html" src="figures/fig03_what_reuse_buys.html" title="What Reuse Buys" loading="lazy"></iframe></div>
+  <p class="src"><a href="figures/fig03_what_reuse_buys.html">Open this figure on its own</a></p>
+  <p class="src">Sources in the project: <code>figures/data/fig03_curves.json</code>, <code>findings/conventions.json</code></p>
+</section>
+<section class="wrap" id="loop">
+  <p class="kicker">3 · The loop</p>
+  <h2>What the reader sees, what deciding costs, what an adapter weighs</h2>
+  <div class="prose">
+    <p>Before it can reuse a circuit, the network has to decide which one. It trains a short probe on the new task and reads the probe&#x27;s shape: deciding by shape from a 500-step probe of the output end is accurate, cheap and robust to unseen formulas (notebooks 7, 8 and 11).</p>
+    <p>Run as one loop over a stream of 15 tasks, a single network makes 12 of 13 right calls in every seed and ends at 59–64% of the size of separate networks, with 24–36% of the steps (notebook 8).</p>
+  </div>
+  <div class="card plain"><div>
+    <p class="what">Interactive figure</p>
+    <p class="ft">The reader, the stream, the costs, the adapters</p>
+    <ul><li>The Reader’s View</li><li>Fifteen Tasks, One Network</li><li>What Deciding Costs</li><li>What an Adapter Weighs</li></ul>
+    <div class="actions"><button class="open" type="button" aria-expanded="false" data-host="host-loop" data-src="figures/fig02-05_reader_stream_costs_adapters.html" data-title="The reader, the stream, the costs, the adapters" data-open="Open the figure here">Open the figure here</button><a href="figures/fig02-05_reader_stream_costs_adapters.html" target="_blank" rel="noopener">Open it in its own tab</a></div>
+  </div></div>
+  <div class="host" id="host-loop"></div>
+  <p class="src">Sources in the project: <code>findings/nb07_learning_to_read.json</code>, <code>findings/nb08_whole_loop.json</code>, <code>findings/nb09_adapters.json</code>, <code>findings/nb11_deciding.json</code>, <code>figures/data/fig02-05_data.json</code></p>
+</section>
+<section class="wrap" id="evidence">
+  <p class="kicker">The record</p>
+  <h2>Where the evidence stands</h2>
+  <div class="prose"><p>Every notebook fixes its rules before its fresh seeds run; a rule passes if it holds in at least 4 of 5 seeds. This table is rebuilt from the project's findings each time the page is built.</p></div>
+  <table>
+    <thead><tr><th>No.</th><th>Notebook</th><th>What it found</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td class="name">ring detection weekend test</td><td>rings exist and are clean with the answer key (10/10, no false alarms); blind whole-layer views fail</td><td class="res"><span class="dot pass"></span>passed, with the answer key</td></tr>
+      <tr><td class="n">2</td><td class="name">grafting oracle test</td><td>a perfectly placed 128-weight bridge helps B learn (less data, 1.4-1.9x faster); copying the whole table helps more</td><td class="res"><span class="dot pass"></span>passed</td></tr>
+      <tr><td class="n">3</td><td class="name">general matcher test</td><td>neuron groups find the rings without the answer key (1.11-1.15 vs controls 0.11-0.29); end to end B beats no help 5/5</td><td class="res"><span class="dot pass"></span>passed</td></tr>
+      <tr><td class="n">4</td><td class="name">fewer neurons test</td><td>a bridge teaches, it does not share: B copies the rings; size savings not consistent at 30,000 steps</td><td class="res"><span class="dot mixed"></span>mixed</td></tr>
+      <tr><td class="n">5</td><td class="name">sharing test</td><td>a lens of 64-80 trained numbers turns add&#x27;s frozen rings into subtraction 5/5; lens off restores add; mul unreachable</td><td class="res"><span class="dot mixed"></span>sharing passed; fewer neurons did not hold</td></tr>
+      <tr><td class="n">6</td><td class="name">one network many tasks</td><td>one network decides by ring matching, ends at 64-72% of separate networks, 42-79% of the steps, learns reused tasks from 96 pairs</td><td class="res"><span class="dot pass"></span>passed (7/7)</td></tr>
+      <tr><td class="n">7</td><td class="name">learning to read circuits</td><td>read the output end (95-96% vs 73-77%); a learned reader works on unseen families from 500-step probes; the features do the work</td><td class="res"><span class="dot pass"></span>passed (8/9; the miss is a setup check)</td></tr>
+      <tr><td class="n">8</td><td class="name">whole loop one network</td><td>the whole loop in one network over 15 tasks: 12/13 right calls every seed, 59-64% of the size, 24-36% of the steps, output lens reaches the square-at-the-end decoys</td><td class="res"><span class="dot pass"></span>passed (10/10)</td></tr>
+      <tr><td class="n">9</td><td class="name">adapters which lens</td><td>the ring lens is the smallest adapter that does the turn tasks and needs real rings; table tune retires the full lens; freezing matters at 96 pairs</td><td class="res"><span class="dot pass"></span>passed (4/4 rules, 10/10 seeds)</td></tr>
+      <tr><td class="n">10</td><td class="name">one shared network</td><td>a one-table shared network cannot learn the mixed stream at any setting; per-task tables fix it; fair baseline is notebook 10b</td><td class="res"><span class="dot"></span>inconclusive; cause diagnosed</td></tr>
+      <tr><td class="n">11</td><td class="name">deciding by shape</td><td>the reader decides as well as trying at a fixed 500-step cost, wastes a fifth of guessing, handles unseen formulas; |a-b| and floor((a+b)/2) are its blind spot</td><td class="res"><span class="dot pass"></span>passed (5/5)</td></tr>
+    </tbody>
+  </table>
+  <p class="legend"><span><span class="dot pass"></span>passed</span><span><span class="dot mixed"></span>mixed</span><span><span class="dot"></span>inconclusive or open</span></p>
+  <div class="two" style="grid-template-columns: 1fr;">
+    <div><h3>What stands</h3><ul>
+      <li>Shape carries reuse: the ring lens works only on real rings (nb 5, 9).</li>
+      <li>Reuse goes through lenses on frozen circuits; freezing is what makes 96-pair learning possible (nb 5, 9).</li>
+      <li>Deciding by shape from a 500-step probe of the output end is accurate, cheap and robust to unseen formulas (nb 7, 8, 11).</li>
+      <li>One network runs the loop with the three savings: space, steps, data (nb 6, 8).</li>
+    </ul></div>
+  </div>
+</section>
+</main>
+<footer class="wrap">
+  <hr class="rule" style="margin: 0 0 28px;">
+  <p>AI assistance. Arthur Boscoli Rodrigues conceived this research, directs it and is responsible for its content. Claude, an AI model made by Anthropic, was used throughout: to write and run the code of the experiments, to analyze the results, to build the figures and to draft text.</p>
+  <p>Every number on this page comes from the project's findings files (one per notebook, with the rules, the seeds they held in, and their sources) or from the data file of the figure it appears in. The table and the lists above are generated from <code>findings/00_index.json</code>; the chapters from <code>writeup/story.json</code>.</p>
+  <p>© 2026 Arthur Boscoli Rodrigues. All rights reserved. Research in progress, not yet peer reviewed. First published on this page on 2026-10-05.</p>
+  <p>Built on 2026-10-05 by <code>code/story/build_site.py</code>. Figures: three.js and D3 from cdnjs; type: STIX Two Text and IBM Plex Sans.</p>
+</footer>
+<script>
+  // An inline figure reports its own height, so its frame fits without a second scrollbar.
+  addEventListener("message", (e) => {
+    const d = e.data;
+    if (!d || !d.topologicalReuseFigure || !(d.height > 200)) return;
+    document.querySelectorAll('iframe.fit[data-fig="' + d.topologicalReuseFigure + '"]').forEach((f) => { f.style.height = Math.ceil(d.height) + "px"; });
+  });
+  // The large 3-D figures load only when asked for: they are heavy, and they take over the mouse wheel.
+  document.querySelectorAll("button.open").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const host = document.getElementById(btn.dataset.host);
+      if (host.firstChild) { host.replaceChildren(); btn.setAttribute("aria-expanded", "false"); btn.textContent = btn.dataset.open; return; }
+      const f = document.createElement("iframe");
+      f.className = "window"; f.src = btn.dataset.src; f.title = btn.dataset.title; f.style.cssText = "display:block;width:100%;border:0;height:min(88vh,940px)";
+      host.append(f); btn.setAttribute("aria-expanded", "true"); btn.textContent = "Close the figure";
+      host.scrollIntoView({ block: "start" });
+    });
+  });
+</script>
+</body>
+</html>
