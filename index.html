@@ -177,6 +177,7 @@
       <tr><td class="n">10</td><td class="name">one shared network</td><td>a one-table shared network cannot learn the mixed stream at any setting; per-task tables fix it; the fair baseline ran as notebook 10b</td><td class="res"><span class="dot"></span>inconclusive; cause diagnosed</td></tr>
       <tr><td class="n">10b</td><td class="name">nb10b fair shared network</td><td>against a shared network with a table per task, the loop learns a new task in 200-250 steps vs 400-550 (5/5) and from 96 pairs scores 71-87% vs 38-51% (bar met 3/5); the shared network never learns four chain-like tasks</td><td class="res"><span class="dot mixed"></span>mixed (steps 5/5; data 3/5, short of the 25-point bar)</td></tr>
       <tr><td class="n">11</td><td class="name">deciding by shape</td><td>the reader decides as well as trying at a fixed 500-step cost, wastes a fifth of guessing, handles unseen formulas; |a-b| and floor((a+b)/2) are its blind spot</td><td class="res"><span class="dot pass"></span>passed (5/5)</td></tr>
+      <tr><td class="n">13</td><td class="name">nb13 chains</td><td>stored links compose: all 171 readable chains answer composite tasks such as (a - b)^2 at 94% or better with no training; the right chain is the top scorer among 55 on 80 check pairs every time; chains reach 45 of 45 cube composites where learning reaches 20</td><td class="res"><span class="dot pass"></span>passed (4/4 rules, 5/5 seeds)</td></tr>
     </tbody>
   </table>
   <p class="legend"><span><span class="dot pass"></span>passed</span><span><span class="dot mixed"></span>mixed</span><span><span class="dot"></span>inconclusive or open</span></p>
@@ -187,6 +188,7 @@
       <li>Deciding by shape from a 500-step probe of the output end is accurate, cheap and robust to unseen formulas (nb 7, 8, 11).</li>
       <li>One network runs the loop with the three savings: space, steps, data (nb 6, 8).</li>
       <li>Against a fair shared network, a frozen circuit with a table tune still learns a new task in fewer steps (5/5 seeds) and is ahead with 96 pairs in every seed, by 23-42 points, short of the 25-point bar in two (nb 10b).</li>
+      <li>Links are separable pieces: an input link and an output link learned on different tasks compose around a frozen circuit into tasks neither was trained on, and the right chain is found by trying the library on 80 pairs, without names (nb 13).</li>
     </ul></div>
   </div>
 </section>
