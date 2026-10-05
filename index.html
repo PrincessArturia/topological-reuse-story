@@ -174,7 +174,8 @@
       <tr><td class="n">7</td><td class="name">learning to read circuits</td><td>read the output end (95-96% vs 73-77%); a learned reader works on unseen families from 500-step probes; the features do the work</td><td class="res"><span class="dot pass"></span>passed (8/9; the miss is a setup check)</td></tr>
       <tr><td class="n">8</td><td class="name">whole loop one network</td><td>the whole loop in one network over 15 tasks: 12/13 right calls every seed, 59-64% of the size, 24-36% of the steps, output lens reaches the square-at-the-end decoys</td><td class="res"><span class="dot pass"></span>passed (10/10)</td></tr>
       <tr><td class="n">9</td><td class="name">adapters which lens</td><td>the ring lens is the smallest adapter that does the turn tasks and needs real rings; table tune retires the full lens; freezing matters at 96 pairs</td><td class="res"><span class="dot pass"></span>passed (4/4 rules, 10/10 seeds)</td></tr>
-      <tr><td class="n">10</td><td class="name">one shared network</td><td>a one-table shared network cannot learn the mixed stream at any setting; per-task tables fix it; fair baseline is notebook 10b</td><td class="res"><span class="dot"></span>inconclusive; cause diagnosed</td></tr>
+      <tr><td class="n">10</td><td class="name">one shared network</td><td>a one-table shared network cannot learn the mixed stream at any setting; per-task tables fix it; the fair baseline ran as notebook 10b</td><td class="res"><span class="dot"></span>inconclusive; cause diagnosed</td></tr>
+      <tr><td class="n">10b</td><td class="name">nb10b fair shared network</td><td>against a shared network with a table per task, the loop learns a new task in 200-250 steps vs 400-550 (5/5) and from 96 pairs scores 71-87% vs 38-51% (bar met 3/5); the shared network never learns four chain-like tasks</td><td class="res"><span class="dot mixed"></span>mixed (steps 5/5; data 3/5, short of the 25-point bar)</td></tr>
       <tr><td class="n">11</td><td class="name">deciding by shape</td><td>the reader decides as well as trying at a fixed 500-step cost, wastes a fifth of guessing, handles unseen formulas; |a-b| and floor((a+b)/2) are its blind spot</td><td class="res"><span class="dot pass"></span>passed (5/5)</td></tr>
     </tbody>
   </table>
@@ -185,6 +186,7 @@
       <li>Reuse goes through lenses on frozen circuits; freezing is what makes 96-pair learning possible (nb 5, 9).</li>
       <li>Deciding by shape from a 500-step probe of the output end is accurate, cheap and robust to unseen formulas (nb 7, 8, 11).</li>
       <li>One network runs the loop with the three savings: space, steps, data (nb 6, 8).</li>
+      <li>Against a fair shared network, a frozen circuit with a table tune still learns a new task in fewer steps (5/5 seeds) and is ahead with 96 pairs in every seed, by 23-42 points, short of the 25-point bar in two (nb 10b).</li>
     </ul></div>
   </div>
 </section>
